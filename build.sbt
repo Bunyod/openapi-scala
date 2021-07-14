@@ -10,7 +10,7 @@ lazy val http4s = Seq(http4sCore, http4sDsl, http4sCirce, http4sServer)
 lazy val commonScalaSettings = Seq(
   scalacOptions ++= compilerFlags,
   Test / fork := true,
-  scalaVersion := "2.12.11",
+  scalaVersion := "2.12.14",
   organization := "com.enfore",
   scalacOptions ++= compilerFlags,
   scalacOptions in (Compile, console) ~= (_ filterNot (_ == "-Xfatal-warnings")),
@@ -85,7 +85,6 @@ lazy val `sbt-openapi` = (project in file("sbt-openapi"))
 lazy val publishSettings = Seq(
   crossPaths := true,
   autoAPIMappings := true,
-  useGpg := false,
   usePgpKeyHex("1EAA6358E4812E9E"),
   pgpPublicRing := file(".") / "project" / ".gnupg" / "pubring.gpg",
   pgpSecretRing := file(".") / "project" / ".gnupg" / "secring.gpg",

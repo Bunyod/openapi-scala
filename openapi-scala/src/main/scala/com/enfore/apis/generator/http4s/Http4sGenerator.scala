@@ -67,15 +67,15 @@ object Http4sGenerator {
          |import eu.timepit.refined.boolean._
          |import io.circe.refined._
          |
-         |object Routes {
+         |object Http4sRoutes {
          |  def apply[F[_] : Sync](impl: Http4sRoutesApi[F], errorHandler: ErrorHandler[F]): HttpRoutes[F] = {
-         |    val dsl = new Http4sDsl[F]{}
-         |    import dsl._
-         |${queryParameterMatchers(routes, indentationLevel = 2).mkString("\n")}
-         |    HttpRoutes.of[F] {
-         |${routeDefinitions(routes, indentationLevel = 3).mkString("\n\n")}
-         |    }
+         |    new Http4sRoutes().routes
          |  }
+         |}
+         |
+         |final class Http4sRoutes[F[_] : Sync](impl: Http4sRoutesApi[F], errorHandler: ErrorHandler[F]) extends Http4sDsl[F] {
+         |${queryParameterMatchers(routes, indentationLevel = 2).mkString("\n")}
+         |${routeDefinitions(routes, indentationLevel = 3)}
          |}
      """.stripMargin
       }
@@ -135,10 +135,27 @@ object Http4sGenerator {
     output.distinct
   }
 
-  private def routeDefinitions(routes: Map[String, PathItemAggregation], indentationLevel: Int): List[String] =
-    routes.values.toList
-      .flatMap(_.items)
-      .map(RouteGenerator.generate(_, indentationLevel).mkString("\n"))
+  private def routeDefinitions(routes: Map[String, PathItemAggregation], indentationLevel: Int): String = {
+    println(s"ROUTES:$routes")
+    val indexedRoutes = routes.values.zipWithIndex
+    val generated = indexedRoutes.toList.map { case (aggregation, i) =>
+      val routes  = aggregation.items.map(RouteGenerator.generate(_, indentationLevel).mkString("\n"))
+      s"""
+         |val route${i+1} = HttpRoutes.of[F] {
+         |  ${routes.mkString("\n\n")}
+         |}
+      """.stripMargin
+    }
+    println(s"GENERATED:$generated")
+    val definedRoutes = (2 to generated.size).foldLeft("val routes: HttpRoutes[F] = route1") { case (acc, i) =>
+      acc + s" <+> route$i"
+    }
+    println(s"DEFINED_ROUTES:$definedRoutes")
+
+    val res = definedRoutes + generated.mkString("\n\n")
+    println(s"RESSSS:$res")
+    res
+  }
 
   private def implementationTrait(routes: Map[String, PathItemAggregation], indentationLevel: Int): List[String] =
     routes.values.toList

@@ -82,15 +82,17 @@ class Http4sGeneratorSpec extends AnyFreeSpec with Matchers {
       |import eu.timepit.refined.boolean._
       |import io.circe.refined._
       |
-      |object Routes {
+      |object Http4sRoutes {
       |  def apply[F[_] : Sync](impl: Http4sRoutesApi[F], errorHandler: ErrorHandler[F]): HttpRoutes[F] = {
-      |    val dsl = new Http4sDsl[F]{}
-      |    import dsl._
+      |    new Http4sRoutes().routes
+      |  }
+      |}
       |
-      |    HttpRoutes.of[F] {
-      |      case request @ GET -> Root / "contacts" / "individual" =>
-      |        errorHandler.resolve(impl.`dummyFunction`(request), (x: IndividualContact) => EntityGenerator(200)(x.asJson.dropNullValues))
-      |    }
+      |final class Http4sRoutes[F[_] : Sync](impl: Http4sRoutesApi[F], errorHandler: ErrorHandler[F]) extends Http4sDsl[F] {
+      |  val routes: HttpRoutes[F] = route1
+      |  val route1 = HttpRoutes.of[F] {
+      |    case request @ GET -> Root / "contacts" / "individual" =>
+      |    errorHandler.resolve(impl.dummyFunction(request), (x: IndividualContact) => EntityGenerator(200)(x.asJson.dropNullValues))
       |  }
       |}
       |
